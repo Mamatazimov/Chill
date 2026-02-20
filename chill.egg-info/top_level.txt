@@ -1,3 +1,0 @@
-chill
-chill_init
-main
