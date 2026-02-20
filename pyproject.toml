@@ -11,8 +11,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-py-modules = ["main", "chill", "chill_init"]
+py-modules = ["main", "chill", "chill_init", "chill_crypt"]
 
 [project.scripts]
-chilling = "main:cli"
-ch="main:cli"
+chill = "main:cli"
