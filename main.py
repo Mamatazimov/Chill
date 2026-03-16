@@ -1,46 +1,77 @@
 import click
 
 from chill import Chill
-from chill_init import chill_init
+
+chill = Chill()
 
 
-@click.group()
-def cli():
-    """Chill bu oddiy papka versiya manageri!"""
+@click.group(invoke_without_command=True)
+@click.option("-p", "--path", default=".", help="Proyekt joylashgan yo'l")
+@click.pass_context
+def cli(ctx, path):
+    """
+    Bu buyruq "NEW PROJECT"ni optimallashtiradi.
+    """
+    if ctx.invoked_subcommand is None:
+        chill.chill(path)
+    else:
+        ctx.ensure_object(dict)
+        ctx.obj["path"] = path
+
+
+@cli.command()
+@click.argument("comment", default="")
+@click.pass_context
+def save(ctx, comment):
+    """
+    This command saves your current Projects new version.
+    """
+    path = ctx.obj["path"]
+    chill.save(comment, path)
+
+
+@cli.command()
+@click.argument("id", default=-1)
+@click.pass_context
+def back(ctx, id):
+    """
+    This command builds old version save.
+    This works based on the entered id, if it is not entered one previous save id will be used.
+    """
+    path = ctx.obj["path"]
+    chill.back(id, path)
+
+
+@cli.command()
+@click.pass_context
+def list(ctx):
+    """
+    This command shows current Project's all flows and saves.
+    """
+    path = ctx.obj["path"]
+    chill.list(path)
+
+
+@cli.command()
+@click.argument("flow_name")
+@click.pass_context
+def flow(ctx, flow_name):
+    """
+    This command create new flow.
+    If it alredy exist then activate this flow.
+    """
+    path = ctx.obj["path"]
+    chill.flow(path=path, flow_name=flow_name)
+
+
+@cli.command()
+def gui(comment):
+    """
+    This command starts terminal gui app.
+    """
     pass
 
 
-@cli.command()
-@click.argument("path", default=".")
-@click.argument("version", default="default")
-def save(path, version):
-    """Faylni versiyasi asosida saqlash"""
-    click.echo(f"Saqlanmoqda: {path} (Versiya: {version})")
-    Chill.save_version(version, False, path)
-
-
-@cli.command()
-@click.argument("path", default=".")
-@click.argument("version", default="default")
-def init(path, version):
-    """Belgilangan versiya asosida faylni moslash"""
-    click.echo(f"Tiklanmoqda: {path} (Versiya: {version})")
-    Chill.save_version(version, True, path)
-
-
-@cli.command()
-def list():
-    """Barcha loyhalarni olish"""
-    Chill.get_saves()
-
-
-@cli.command()
-@click.argument("project")
-def version(project):
-    """Berilgan Loyha asosida versiyalarni"""
-    Chill.get_versions(project)
-
-
 if __name__ == "__main__":
-    chill_init()
     cli()
+    chill.db.close()
