@@ -1,6 +1,7 @@
 import os
 
 from db import DataBase
+from gui import ChillTui
 from utils import Utils
 
 color_data = Utils.color_data
@@ -128,5 +129,6 @@ class Chill:
         )
         print(msg)
 
-    def gui(self):
-        pass
+    def tui(self, path: str = "."):
+        app = ChillTui(self.db, path)
+        app.run()

@@ -65,11 +65,13 @@ def flow(ctx, flow_name):
 
 
 @cli.command()
-def gui(comment):
+@click.pass_context
+def tui(ctx):
     """
     This command starts terminal gui app.
     """
-    pass
+    path = ctx.obj["path"]
+    chill.tui(path)
 
 
 if __name__ == "__main__":
