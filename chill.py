@@ -130,5 +130,11 @@ class Chill:
         print(msg)
 
     def tui(self, path: str = "."):
+        if not self.db.project_exists(self.utils.clear_path(path)):
+            print(
+                f"Project not found in this directory [{self.utils.colored_print(path, color_data['red'])}]"
+            )
+            return
+
         app = ChillTui(self.db, path)
         app.run()

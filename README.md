@@ -5,26 +5,37 @@
 * Loyihani boshqarish __(Chill / Init)__\
 Loyihani berilgan path asosida tekshiradi va mavjud bo‘lgan version yoki yangi projekt yaratadi:
 ```
-chilling -p /path/to/project
+chillbek -p /path/to/project
 ```
 
 * Holatni saqlash __(Save)__\
 Hozirgi loyiha holatini yangi versiya sifatida saqlaydi:
 ```
-chilling save
+chillbek save
 ```
 * Saqlangan versiyalar ro'yxati __(List)__\
 Proyektning barcha flow va save’larini ko‘rsatadi:
 ```
-chilling list
+chillbek list
 ```
 * Flow yaratish va o‘zgartirish __(Flow)__\
 Yangi flow yaratadi yoki mavjud flow’ni tanlaydi:
 ```
-chilling flow <flow_name>
+chillbek flow <flow_name>
 ```
 * Eski versiyani tiklash __(Back)__\
 Tanlangan save id asosida loyiha holatini tiklaydi:
 ```
-chilling back
+chillbek back
 ```
+* Terminal Ui ni ochish  __(Tui)__\
+Gitdan farqli Chillda Tui bor bo'lib u tez va qulay bo'lgan Textual kutubxonasida yaratilgan:
+```
+chillbek tui
+```
+
+* __(Build)__ qilish uchun ushbu kamandani tering:\
+```
+uv tool install .
+```
+"." o'rnida loyha joylashgan path

@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-py-modules = ["main", "chill", "db"]
+py-modules = ["main", "chill", "db", "gui", "utils"]
 
 [project.scripts]
-chilling = "main:cli"
+chillbek = "main:cli"
