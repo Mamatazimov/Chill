@@ -1,36 +1,50 @@
 ## Chill — bu Python tilida yozilgan, Git tizimiga o'xshash, ammo juda sodda ishlaydigan versiyalarni boshqarish vositasi.
 ### Bu loyiha murakkab buyruqlarsiz fayllaringizning holatlarini saqlash va kuzatib borish uchun mo'ljallangan.
-
 ##### Asosiy Imkoniyatlar:
 
-* Loyihani boshlash (Init)
-Loyhani oldin saqlangan version nomi va berilgan pathdan asosida loyhani izlab topadi va loyhani so'ralgan version asosida tahrirlaydi! 
+* Loyihani boshqarish __(Chill / Init)__\
+Loyihani berilgan path asosida tekshiradi va mavjud bo‘lgan version yoki yangi projekt yaratadi:
 ```
-chill init path version
-```
-
-* Holatni saqlash (Save)
-Path bilan berilgan loyhani version nomi asosida saqlab qo'yadi!
-```
-chill save path version
+chillbek -p /path/to/project
 ```
 
-* Saqlangan versiyalar ro'yxati (List)
-Shu vaqtgacha saqlangan barcha "snapshot"larni va ularning "version"larini  ko'rish imkonini beradi.
+* Holatni saqlash __(Save)__\
+Hozirgi loyiha holatini yangi versiya sifatida saqlaydi:
 ```
-chill list
+chillbek save
 ```
-
-* Dastur versiyasi (Version)
-Berilgan path asosida loyhani aniqlab undagi barcha pathlarni yozib chiqazadi!
+* Saqlangan versiyalar ro'yxati __(List)__\
+Proyektning barcha flow va save’larini ko‘rsatadi:
 ```
-chill version path
+chillbek list
 ```
-
-##### O'rnatish va Ishga tushirish:
-Loyiha Python muhitida va Click kutubxonasi yordamida ishlaydi. Uni ishga tushirish uchun quyidagi buyruqni bajaring:
-
+* Flow yaratish va o‘zgartirish __(Flow)__\
+Yangi flow yaratadi yoki mavjud flow’ni tanlaydi:
 ```
-pip install click cryptocode cryptography
-python main.py --help
+chillbek flow <flow_name>
 ```
+* Eski versiyani tiklash __(Back)__\
+Tanlangan save id asosida loyiha holatini tiklaydi:
+```
+chillbek back
+```
+* Terminal Ui ni ochish  __(Tui)__\
+Gitdan farqli Chillda Tui bor bo'lib u tez va qulay bo'lgan Textual kutubxonasida yaratilgan:
+```
+chillbek tui
+```
+* Loyhani export folderini tayyorlash   __(Export)__ \
+Chillda gitga nisbatan umumiy qurulma uchun aynan bir joyda database ishlatilishi sababli boshqa qurulmaga loyhani olib o'tsa bu muammo bo'ladi va bu muammo uchun export folderini tayyorlash maslahat beriladi:
+```
+chillbek export
+```
+* Loyhani export folder yrdamida import qilib olish   __(Importing)__\
+Export orqali boshqa qurulmadan kelgan export folderini qurulmadagi chillga qo'shish:
+```
+chillbek importing
+```
+* __(Build)__ qilish uchun ushbu kamandani tering:\
+```
+uv tool install .
+```
+"." o'rnida loyha joylashgan path

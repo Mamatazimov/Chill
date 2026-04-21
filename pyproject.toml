@@ -6,12 +6,16 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "click>=8.3.1",
-    "cryptocode>=0.1",
-    "cryptography>=46.0.5",
+    "textual>=8.2.1",
 ]
 
 [tool.setuptools]
-py-modules = ["main", "chill", "chill_init", "chill_crypt"]
+py-modules = ["main", "chill", "db", "gui", "utils"]
+
+[dependency-groups]
+dev = [
+    "textual-dev>=1.8.0",
+]
 
 [project.scripts]
-chill = "main:cli"
+chillbek = "main:cli"

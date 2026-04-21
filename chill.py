@@ -1,198 +1,176 @@
+import ast
 import os
-import shutil
-from pathlib import Path
-from typing import Any, Tuple
 
-from chill_crypt import SecureCoder
+from db import DataBase
+from gui import ChillTui
+from utils import Utils
 
-sc = SecureCoder("My secret chill key!")
+color_data = Utils.color_data
 
 
 class Chill:
-    @staticmethod
-    def save_version(version: str, is_opposite: bool = False, path: str = "."):
-        if "~" == path[0]:
-            path = os.path.join(os.path.expanduser("~"), path[1:])
+    def __init__(self):
+        self.db_path = os.path.join(os.path.expanduser("~"), ".ChillManager", "db")
+        os.makedirs(self.db_path, exist_ok=True)
+        self.db = DataBase(os.path.join(self.db_path, "database.sqlite3"))
+        self.db.init_db()
+        self.utils = Utils()
 
-        path = str(Path(path).resolve())
-
+    def chill(self, path: str = "."):
+        path = self.utils.clear_path(path)
         if not os.path.exists(path):
-            Utils.colored_print("Bunaday manzildagi path topilmadi!", "danger")
-
-        tree: dict[str, Any]
-        is_success: bool
-        tree, is_success = Utils.get_tree(path)
-
-        if not is_success:
-            Utils.colored_print(
-                "Manzilni tree shaklini olishda xatolik yuz berdi!", "danger"
+            print(
+                f"{self.utils.colored_print('This path is incorrect:', color_data['red'])} [{path}]"
             )
-        Utils.colored_print(*Utils.save_chill(tree, version, is_opposite))
-
-    @staticmethod
-    def get_saves():
-        chill_path: str = os.path.join(os.path.expanduser("~"), ".chill")
-        projects: list = []
-        if not os.path.exists(chill_path):
-            Utils.colored_print(f"{chill_path} manzil topilmadi!", "danger")
             return
-        projects = os.listdir(chill_path)
-        for project in projects:
-            versions = Utils.get_project_versions(os.path.join(chill_path, project))
-            Utils.colored_print(f"[ {project} ] --> [ {' | '.join(versions)} ]")
+        message, is_success = (
+            self.utils.show_project_info(self.db, path)
+            if self.db.project_exists(path)
+            else self.utils.init_new_project(self.db, path)
+        )
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} {message}"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} {message}"
+        )
+        print(msg)
 
-    @staticmethod
-    def get_versions(project):
-        chill_path: str = os.path.join(os.path.expanduser("~"), ".chill")
-        if not os.path.exists(chill_path):
-            Utils.colored_print(f"{chill_path} manzil topilmadi!", "danger")
+    def save(self, message: str = "", path: str = "."):
+        path = self.utils.clear_path(path)
+        message, is_success = self.utils.save(self.db, message, path)
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} [{message}]"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} [{message}]"
+        )
+        print(msg)
+
+    def export(self, path: str = "."):
+        path = self.utils.clear_path(path)
+        if not self.db.project_exists(path):
+            print("Project path not found!")
+            return
+        message, is_success = self.utils.export_project(
+            self.db, int(self.db.get_project_id(path)[0])
+        )
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} [{message}]"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} [{message}]"
+        )
+        print(msg)
+
+    def importing(self, path: str = "."):
+        path = self.utils.clear_path(path)
+        message, is_success = self.utils.import_project(self.db, path)
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} [{message}]"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} [{message}]"
+        )
+        print(msg)
+
+    def back(self, id: int = -1, path: str = "."):
+        path = self.utils.clear_path(path)
+        if not self.db.project_exists(path):
+            print(
+                f"Project not found in this directory [{self.utils.colored_print(path, color_data['red'])}]"
+            )
             return
 
-        versions = Utils.get_project_versions(os.path.join(chill_path, project))
-        Utils.colored_print(f"Ushbu [ {project} ] loyhada [ {' | '.join(versions)} ]")
+        project_data: tuple = self.db.get_project_id(path)
+        flows: dict = self.utils.get_flows(self.db, project_data[0])
+        if project_data[1] not in list(flows.keys()):
+            print(
+                f"This flow [{self.utils.colored_print(project_data[1], color_data['blue'])}] not found in this project flows [{self.utils.colored_print(str(list(flows.keys())), color_data['blue'])}]!"
+            )
+            return
 
+        if id == -1:
+            id = self.db.get_save_by_id(project_data[2])[3]
 
-class Utils:
-    @staticmethod
-    def get_project_versions(path: str):
-        if not os.path.exists(path):
-            Utils.colored_print(f"{path} manzil topilmadi!", "danger")
-            return []
-        folder_names = os.listdir(path)
+        if id == -1:
+            print(
+                self.utils.colored_print(
+                    "This save's parent not found!", color_data["blue"]
+                )
+            )
 
-        versions: list = []
-        for folder in folder_names:
-            crypted = list(folder.split("_"))[-1]
-            version = sc.decrypt(crypted)
-            versions.append(version)
-        return versions
+        is_have = (
+            True
+            if 1 == len([1 for data in flows[project_data[1]] if data[0] == id])
+            else False
+        )
 
-    @staticmethod
-    def get_tree(path: str) -> tuple[dict[str, Any], bool]:
-        try:
+        if not is_have:
+            print(
+                f"This save id [{self.utils.colored_print(str(id), color_data['blue'])}] not found in this flow [{self.utils.colored_print(flows[project_data[1]], color_data['blue'])}]"
+            )
+            return
 
-            def loop(path: str):
-                files: list = []
-                res: dict[str, Any] = {path: {"files": files, "dirs": {}}}
-                for entry in os.scandir(path):
-                    if entry.is_file():
-                        files.append(entry.name)
-                    elif entry.is_dir():
-                        res[path]["dirs"][entry.name] = loop(
-                            os.path.join(path, entry.name)
-                        )
+        message, is_success = self.utils.build(self.db, id)
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} [{message}]"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} [{message}]"
+        )
+        print(msg)
 
-                return res
+    def list(self, path: str = "."):
+        path = self.utils.clear_path(path)
+        if not self.db.project_exists(path):
+            print(
+                f"Project not found in this directory [{self.utils.colored_print(path, color_data['red'])}]"
+            )
+            return
 
-            return loop(path), True
+        message, is_success = self.utils.project_data(self.db, path)
+        msg = (
+            f"{message}"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} {message}"
+        )
+        print(msg)
 
-        except Exception as e:
-            Utils.colored_print(f"Error in Utils get_tree: {e}", "danger")
-            return {path: {"files": [], "dirs": {}}}, False
+    def flow(self, flow_name: str, path: str = "."):
+        path = self.utils.clear_path(path)
+        if not self.db.project_exists(path):
+            print(
+                f"Project not found in this directory [{self.utils.colored_print(path, color_data['red'])}]"
+            )
+            return
 
-    @staticmethod
-    def save_file(path, data):
-        with open(path, "wb") as file:
-            file.write(data)
+        project_data: tuple = self.db.get_project_id(path)
+        flows: dict = ast.literal_eval(project_data[-1])
 
-    @staticmethod
-    def get_data(path):
-        with open(path, "rb") as file:
-            return file.read()
+        message, is_success = (
+            self.utils.change_flow(self.db, flow_name, project_data[0])
+            if flow_name in list(flows.keys())
+            else self.utils.create_flow(self.db, flow_name, project_data[0])
+        )
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} {message}"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} {message}"
+        )
+        print(msg)
 
-    @staticmethod
-    def save_chill(
-        tree: dict[str, Any], version: str, is_opposite: bool = False
-    ) -> Tuple[str, str]:
-        try:
-            chill_path: str = os.path.join(os.path.expanduser("~"), ".chill")
-            path: str = list(tree.keys())[0]
-            pathlib_path: Path = Path(path)
-            path_list: list = list(pathlib_path.parts)
-            project_name: str = path_list[-1]
-            crypted: str = sc.encrypt(version)
-            folder_name: str = "_".join(path_list[1:]) + "_" + crypted
-            chill_file_path: str = os.path.join(chill_path, project_name, folder_name)
+    def clear(self):
 
-            def loop(
-                tree: dict[str, Any],
-                from_path: str,
-                to_path: str,
-            ):
-                files: list = tree[list(tree.keys())[0]]["files"]
-                dirs: dict = tree[list(tree.keys())[0]]["dirs"]
-                os.makedirs(to_path)
+        message, is_success = self.utils.clear_base(self.db)
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} {message}"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} {message}"
+        )
+        print(msg)
 
-                for file in files:
-                    to_file_path: str = os.path.join(to_path, file)
-                    file_path: str = os.path.join(from_path, file)
-                    Utils.colored_print(
-                        f"Ushbu {file} fayl ushbu manzilga saqlandi {to_file_path}",
-                        "info",
-                    )
-                    data: bytes = Utils.get_data(file_path)
-                    Utils.save_file(to_file_path, data)
+    def tui(self, path: str = "."):
+        if not self.db.project_exists(self.utils.clear_path(path)):
+            print(
+                f"Project not found in this directory [{self.utils.colored_print(path, color_data['red'])}]"
+            )
+            return
 
-                for dir in dirs.keys():
-                    curr_tree: dict[str, Any] = dirs[dir]
-                    curr_path: str = list(curr_tree.keys())[0]
-                    curr_to_path: str = os.path.join(to_path, dir)
-                    loop(curr_tree, curr_path, curr_to_path)
-
-            if is_opposite:
-                chill_project_path = os.path.join(chill_path, project_name)
-                if not os.path.exists(chill_project_path):
-                    return f"Bunday loyha topilmadi {project_name} !", "danger"
-
-                versions: list[str] = os.listdir(chill_project_path)
-                if not versions:
-                    return (
-                        "Ushbu loyha bo'yicha umuman versiya fayllari topilmadi!",
-                        "danger",
-                    )
-
-                project_path = os.path.join(*list(versions[0].split("_"))[:-1])
-
-                if len(list([v for v in versions if v.endswith(crypted)])) != 1:
-                    return (
-                        "Fayl versiyasi topilmadi! Versiya xato emasligiga ishonch hosil qiling!",
-                        "danger",
-                    )
-
-                forbidden = ["/", "C:\\", "C:\\Windows", os.path.expanduser("~")]
-                if project_path in forbidden:
-                    return (
-                        "Ushbu manzil tizimga ziyon yetkazishi mumkin deb topilgani uchun bloklandi.",
-                        "info",
-                    )
-
-                if os.path.exists(project_path):
-                    shutil.rmtree(project_path)
-
-                new_tree: dict[str, Any]
-                is_success: bool
-                new_tree, is_success = Utils.get_tree(chill_file_path)
-
-                if not is_success:
-                    return "Fayl versiyasi bilan xatolik yuz berdi!", "danger"
-
-                loop(new_tree, chill_file_path, project_path)
-                return "Fayl versiyasidan muvaffaqiyatli nusxa olindi!", "success"
-            else:
-                loop(tree, path, chill_file_path)
-                return "Fayl versiyasi muvaffaqiyatli saqlab qo'yildi!", "success"
-
-        except Exception as e:
-            return f"Error in Utils save_chill: {e}", "danger"
-
-    @staticmethod
-    def colored_print(data: str, status: str = "default") -> None:
-        color_data = {
-            "default": "\033[0m",
-            "danger": "\033[31m",
-            "success": "\033[32m",
-            "info": "\033[36m",
-        }
-
-        color = color_data.get(status, "\033[0m")
-        print(color + data + color_data["default"])
+        app = ChillTui(self.db, path)
+        app.run()
