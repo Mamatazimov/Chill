@@ -1,3 +1,4 @@
+import ast
 import os
 
 from db import DataBase
@@ -37,6 +38,31 @@ class Chill:
     def save(self, message: str = "", path: str = "."):
         path = self.utils.clear_path(path)
         message, is_success = self.utils.save(self.db, message, path)
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} [{message}]"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} [{message}]"
+        )
+        print(msg)
+
+    def export(self, path: str = "."):
+        path = self.utils.clear_path(path)
+        if not self.db.project_exists(path):
+            print("Project path not found!")
+            return
+        message, is_success = self.utils.export_project(
+            self.db, int(self.db.get_project_id(path)[0])
+        )
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} [{message}]"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} [{message}]"
+        )
+        print(msg)
+
+    def importing(self, path: str = "."):
+        path = self.utils.clear_path(path)
+        message, is_success = self.utils.import_project(self.db, path)
         msg = (
             f"{self.utils.colored_print('Successful:', color_data['green'])} [{message}]"
             if is_success
@@ -115,13 +141,23 @@ class Chill:
             return
 
         project_data: tuple = self.db.get_project_id(path)
-        flows: dict = self.utils.get_flows(self.db, project_data[0])
+        flows: dict = ast.literal_eval(project_data[-1])
 
         message, is_success = (
             self.utils.change_flow(self.db, flow_name, project_data[0])
             if flow_name in list(flows.keys())
             else self.utils.create_flow(self.db, flow_name, project_data[0])
         )
+        msg = (
+            f"{self.utils.colored_print('Successful:', color_data['green'])} {message}"
+            if is_success
+            else f"{self.utils.colored_print('Something went wrong:', color_data['red'])} {message}"
+        )
+        print(msg)
+
+    def clear(self):
+
+        message, is_success = self.utils.clear_base(self.db)
         msg = (
             f"{self.utils.colored_print('Successful:', color_data['green'])} {message}"
             if is_success

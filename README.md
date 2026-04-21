@@ -33,7 +33,16 @@ Gitdan farqli Chillda Tui bor bo'lib u tez va qulay bo'lgan Textual kutubxonasid
 ```
 chillbek tui
 ```
-
+* Loyhani export folderini tayyorlash   __(Export)__ \
+Chillda gitga nisbatan umumiy qurulma uchun aynan bir joyda database ishlatilishi sababli boshqa qurulmaga loyhani olib o'tsa bu muammo bo'ladi va bu muammo uchun export folderini tayyorlash maslahat beriladi:
+```
+chillbek export
+```
+* Loyhani export folder yrdamida import qilib olish   __(Importing)__\
+Export orqali boshqa qurulmadan kelgan export folderini qurulmadagi chillga qo'shish:
+```
+chillbek importing
+```
 * __(Build)__ qilish uchun ushbu kamandani tering:\
 ```
 uv tool install .

@@ -2,7 +2,6 @@ import ast
 import os
 
 from textual.app import App, ComposeResult
-from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.widget import Widget
@@ -20,6 +19,27 @@ from textual.widgets import (
 
 from db import DataBase
 from utils import Utils
+
+
+def save_json_log(data_dict):
+    import json
+
+    log_file = "log.json"
+
+    logs = []
+    if os.path.exists(log_file):
+        try:
+            with open(log_file, "r", encoding="utf-8") as f:
+                logs = json.load(f)
+                if not isinstance(logs, list):
+                    logs = []
+        except:
+            logs = []
+
+    logs.append(data_dict)
+
+    with open(log_file, "w", encoding="utf-8") as f:
+        json.dump(logs, f, indent=4, ensure_ascii=False)
 
 
 def build_tree(node, data, current_flow, mode):
@@ -83,9 +103,12 @@ def transform_to_nested(flat_data):
         return {}
 
 
-def get_blob_id_by_path(path: str, file: str, data: list):
+def get_blob_id_by_path(path: str, file: str, data: list, project_path: str):
+
     for p, f, id in data:
-        if path == p and file == f:
+        check_path = os.path.join(project_path, p) if p != "." else project_path
+
+        if path == check_path and file == f:
             return id
 
     return -1
@@ -218,14 +241,14 @@ class ProjectPaths(Widget):
 
     def compose(self) -> ComposeResult:
         yield Static("Opening New Project", id="PP_Header")
-        # project_path = self.db.get_project_by_id(self.project_id)[1]
         yield ListView(
             *[ListItem(Label(f"ID {path[0]} {path[1]}")) for path in self.all_path],
             id="Paths",
         )
 
     def on_list_view_selected(self, event: ListView.Selected):
-        label: Label = event.item.children[0]
+        node_childs = event.item.children
+        label: Label = node_childs[0]
         app = self.app
         app.path = str(str(label.content).split(" ")[2])
         tree = self.app.query_one(ChillTree)
@@ -290,6 +313,7 @@ class ChillTui(App):
             yield ChillFile(self.db)
         yield ProjectPaths(self.db)
         yield Footer()
+        self.notify(str(self.db.get_project_id(self.utils.clear_path(self.path))[0]))
 
     def on_key(self, event):
         if event.key == "1":
@@ -370,6 +394,7 @@ class ChillTui(App):
             sub_path: str = (
                 os.path.join(*data) if isinstance(data, list) and len(data) > 0 else ""
             )
+            self.notify(self.path)
             blob_path: str = (
                 os.path.join(self.utils.clear_path(self.path), sub_path)
                 if len(sub_path) > 0
@@ -377,7 +402,9 @@ class ChillTui(App):
             )
             blobs_data = self.query_one(ProjectTree).data
             self.notify(f"{blob_path}, {label[2:]}")
-            blob_id = get_blob_id_by_path(blob_path, label[2:], blobs_data)
+            blob_id = get_blob_id_by_path(
+                blob_path, label[2:], blobs_data, self.utils.clear_path(self.path)
+            )
             if blob_id == -1:
                 self.notify(f"Not found blob id for this file.", severity="error")
             chillfile = self.query_one(ChillFile)
@@ -453,6 +480,8 @@ class ChillTui(App):
         message, is_success = self.utils.build(self.db, current_save_id)
         if is_success:
             self.notify("Save [green]success[/] builded!", severity="information")
+            self.exit()
+            print("After building tui stop running!")
         else:
             self.notify(f"Error: {message}", severity="error")
 

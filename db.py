@@ -67,7 +67,8 @@ class DataBase:
         with self.connection as conn:
             cur = conn.cursor()
             cur.execute(
-                "SELECT id, flow, head_save FROM projects WHERE path = ?", (path,)
+                "SELECT id, flow, head_save, flow_data FROM projects WHERE path = ?",
+                (path,),
             )
             project_id = cur.fetchone()
             return project_id
@@ -112,6 +113,12 @@ class DataBase:
                 (str(flow_data), project_id),
             )
 
+    def delete_project(self, project_id: int):
+        with self.connection as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM saves WHERE project_id = ?", (project_id,))
+            cur.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+
     # modules of blobs table
 
     def blob_exists(self, hash):
@@ -148,6 +155,11 @@ class DataBase:
             cur.execute("SELECT id, hash FROM blobs")
             blobs_list = cur.fetchall()
             return blobs_list
+
+    def delete_blob(self, blob_hash: str):
+        with self.connection as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM blobs WHERE hash = ?", (blob_hash,))
 
     # modules of trees table
 
@@ -187,7 +199,7 @@ class DataBase:
     def get_list_trees(self):
         with self.connection as conn:
             cur = conn.cursor()
-            cur.execute("SELECT id, hash FROM trees")
+            cur.execute("SELECT id, hash, tree FROM trees")
             trees_list = cur.fetchall()
             return trees_list
 
@@ -234,14 +246,25 @@ class DataBase:
             save_id = cur.fetchone()
             return save_id
 
-    def get_list_saves(self):
+    def get_list_saves(self, id: int = -1):
         with self.connection as conn:
             cur = conn.cursor()
-            cur.execute(
-                "SELECT id, project_id, tree_id, parent_id, comment, time, flow FROM saves"
-            )
+            if id == -1:
+                cur.execute(
+                    "SELECT id, project_id, tree_id, parent_id, comment, time, flow FROM saves"
+                )
+            else:
+                cur.execute(
+                    "SELECT id, project_id, tree_id, parent_id, comment, time, flow FROM saves WHERE project_id = ?",
+                    (id,),
+                )
             saves_list = cur.fetchall()
             return saves_list
+
+    def delete_save(self, save_id: int):
+        with self.connection as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM saves WHERE id = ?", (save_id,))
 
     def get_save_by_id(self, id):
         with self.connection as conn:
@@ -264,6 +287,14 @@ class DataBase:
             )
             saves_list = cur.fetchall()
             return saves_list
+
+    def update_save_parent(self, save_id, parent_id):
+        with self.connection as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE saves SET parent_id = ? WHERE id = ?",
+                (parent_id, save_id),
+            )
 
     def close(self):
         self.connection.close()

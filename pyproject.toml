@@ -12,5 +12,10 @@ dependencies = [
 [tool.setuptools]
 py-modules = ["main", "chill", "db", "gui", "utils"]
 
+[dependency-groups]
+dev = [
+    "textual-dev>=1.8.0",
+]
+
 [project.scripts]
 chillbek = "main:cli"
